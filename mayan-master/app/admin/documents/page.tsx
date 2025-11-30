@@ -1,6 +1,6 @@
 "use client"
 
-import { FileText, Search, Plus, RefreshCw, Download, Eye, Calendar, File } from "lucide-react"
+import { FileText, Search, Plus, RefreshCw, Download, Eye, Calendar, File, Trash } from "lucide-react"
 import { useState, useEffect } from "react"
 import { MayanDocument, MayanPaginatedResponse } from "@/lib/mayanClient"
 import Link from "next/link"
@@ -58,6 +58,37 @@ export default function DocumentsPage() {
 
   const handleRefresh = () => {
     fetchDocuments(searchQuery, currentPage)
+  }
+
+  const handleDelete = async (id: number, label: string) => {
+    if (!window.confirm(`Êtes-vous sûr de vouloir supprimer le document "${label}" ? Cette action est irréversible.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/documents/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete document');
+      }
+
+      // Show success message (simple alert for now as requested)
+      // In a real app, we would use a toast notification
+      // alert('Document supprimé avec succès');
+      
+      // Remove from local state immediately for better UX
+      setDocuments(docs => docs.filter(d => d.id !== id));
+      setTotalCount(count => count - 1);
+      
+      // Or refresh the list
+      // fetchDocuments(searchQuery, currentPage);
+    } catch (err) {
+      console.error('Delete error:', err);
+      alert(err instanceof Error ? err.message : 'Erreur lors de la suppression');
+    }
   }
 
   const formatDate = (dateString: string) => {
@@ -229,6 +260,14 @@ export default function DocumentsPage() {
                   <button className="flex items-center gap-1 rounded-lg border border-zinc-200 px-2 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800">
                     <Download className="h-3 w-3" />
                     Télécharger
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(doc.id, doc.label)}
+                    className="flex items-center gap-1 rounded-lg border border-red-200 px-2 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/50"
+                    title="Supprimer le document"
+                  >
+                    <Trash className="h-3 w-3" />
+                    Supprimer
                   </button>
                 </div>
               </div>

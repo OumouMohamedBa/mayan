@@ -252,3 +252,30 @@ export async function downloadMayanDocumentFileServer(
     throw new Error('Failed to download document file');
   }
 }
+
+export async function deleteDocument(id: string | number): Promise<void> {
+  const baseUrl = process.env.MAYAN_BASE_URL || 'http://localhost:8000';
+  const apiToken = process.env.MAYAN_API_TOKEN;
+
+  if (!apiToken) {
+    throw new Error('MAYAN_API_TOKEN environment variable is not set');
+  }
+
+  const url = `${baseUrl}/api/v4/documents/${id}/`;
+  console.log('deleteDocument - Deleting document:', url);
+
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Token ${apiToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok && response.status !== 204) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(`Failed to delete document: ${response.status} ${errorData.detail || response.statusText}`);
+  }
+  
+  console.log('deleteDocument - Document deleted successfully');
+}
