@@ -19,25 +19,51 @@ export async function GET(
     // Get document metadata for filename
     const document = await getMayanDocumentServer(documentId)
     
-    // Download the latest version
+    const { searchParams } = new URL(request.url);
+    const forceDownload = searchParams.get('download') === 'true';
+    
+    // Download the file (blob contains the correct mime type from Mayan)
     const blob = await downloadMayanDocumentFileServer(documentId)
     
     // Determine filename and content type
-    let filename = `document-${documentId}`
-    let contentType = 'application/octet-stream'
+    // Priority 1: Use the mime type from the actual downloaded file
+    let contentType = blob.type;
+    
+    // Priority 2: Default to PDF if blob type is generic or missing
+    if (!contentType || contentType === 'application/octet-stream') {
+        contentType = 'application/pdf';
+    }
+
+    let filename = `document-${documentId}.pdf`; // Default extension
+    
+    if (document.label) {
+        filename = document.label;
+        // Ensure extension matches content type if possible
+        if (contentType === 'application/pdf' && !filename.toLowerCase().endsWith('.pdf')) {
+            filename += '.pdf';
+        }
+    }
     
     if (document.latest_version) {
       filename = document.latest_version.file_filename || filename
-      contentType = document.latest_version.file_mimetype || contentType
+      // Only override content type from metadata if we don't have a good one yet
+      if (!contentType || contentType === 'application/octet-stream') {
+          contentType = document.latest_version.file_mimetype || contentType
+      }
     }
+    
+    const dispositionType = forceDownload ? 'attachment' : 'inline';
+    console.log(`DEBUG: Serving download with Content-Type: ${contentType}, Filename: ${filename}, Disposition: ${dispositionType}`);
     
     // Return the blob with appropriate headers for streaming
     return new NextResponse(blob, {
       status: 200,
       headers: {
         'Content-Type': contentType,
-        'Content-Disposition': `attachment; filename="${filename}"`,
-        'Cache-Control': 'no-cache',
+        'Content-Disposition': `${dispositionType}; filename="${filename}"`,
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
         'Access-Control-Allow-Origin': '*',
       },
     })

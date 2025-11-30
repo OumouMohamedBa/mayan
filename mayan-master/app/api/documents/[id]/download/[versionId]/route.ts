@@ -17,17 +17,33 @@ export async function GET(
       )
     }
 
+    const { searchParams } = new URL(request.url);
+    const forceDownload = searchParams.get('download') === 'true';
+
     // Download the specific document version
     const blob = await downloadMayanDocumentFileServer(documentId, versionIdNum)
     
     // Get the document to determine filename
     const document = await getMayanDocumentServer(documentId)
     
+    let contentType = blob.type;
+    if (!contentType || contentType === 'application/octet-stream') {
+        contentType = 'application/pdf';
+    }
+    
+    let filename = document.label || `document-${documentId}`;
+    filename = `${filename}-v${versionIdNum}.pdf`;
+
+    const dispositionType = forceDownload ? 'attachment' : 'inline';
+
     // Return the blob with appropriate headers
     return new NextResponse(blob, {
+      status: 200,
       headers: {
-        'Content-Type': 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${document.latest_version?.file_filename || `document-${documentId}-v${versionIdNum}`}"`,
+        'Content-Type': contentType,
+        'Content-Disposition': `${dispositionType}; filename="${filename}"`,
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'no-cache',
       },
     })
   } catch (error) {

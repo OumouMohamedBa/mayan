@@ -54,7 +54,30 @@ export function AccessRuleModal({
     endDate: "",
     isActive: true,
   })
+  const [documents, setDocuments] = useState<any[]>([])
+  const [loadingDocs, setLoadingDocs] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    if (isOpen && formData.targetType === 'document') {
+        fetchDocuments()
+    }
+  }, [isOpen, formData.targetType])
+
+  const fetchDocuments = async () => {
+    setLoadingDocs(true)
+    try {
+        const res = await fetch('/api/documents?pageSize=100')
+        if (res.ok) {
+            const data = await res.json()
+            setDocuments(data.results || [])
+        }
+    } catch (error) {
+        console.error("Failed to fetch documents", error)
+    } finally {
+        setLoadingDocs(false)
+    }
+  }
 
   useEffect(() => {
     if (rule) {
@@ -219,21 +242,52 @@ export function AccessRuleModal({
           {/* Target ID */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Identifiant de la cible
+              {formData.targetType === 'document' ? 'Sélectionner un document' : 'Identifiant de la cible'}
             </label>
-            <input
-              type="text"
-              value={formData.targetId}
-              onChange={(e) =>
-                setFormData({ ...formData, targetId: e.target.value })
-              }
-              className={`w-full rounded-lg border px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 dark:bg-zinc-800 dark:text-zinc-100 ${
-                errors.targetId
-                  ? "border-red-300 focus:ring-red-500"
-                  : "border-zinc-200 focus:ring-zinc-500 dark:border-zinc-700"
-              }`}
-              placeholder="Ex: DOC-001, FOLDER-RH, TAG-CONTRATS"
-            />
+            
+            {formData.targetType === 'document' ? (
+                <div className="relative">
+                    <select
+                      value={formData.targetId}
+                      onChange={(e) => {
+                        const selectedDoc = documents.find(d => d.id.toString() === e.target.value)
+                        setFormData({ 
+                            ...formData, 
+                            targetId: e.target.value,
+                            targetName: selectedDoc ? selectedDoc.label : formData.targetName 
+                        })
+                      }}
+                      disabled={loadingDocs}
+                      className={`w-full rounded-lg border px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-2 dark:bg-zinc-800 dark:text-zinc-100 ${
+                        errors.targetId
+                          ? "border-red-300 focus:ring-red-500"
+                          : "border-zinc-200 focus:ring-zinc-500 dark:border-zinc-700"
+                      }`}
+                    >
+                      <option value="">{loadingDocs ? 'Chargement...' : 'Choisir un document'}</option>
+                      {documents.map((doc) => (
+                        <option key={doc.id} value={doc.id}>
+                          {doc.label} (ID: {doc.id})
+                        </option>
+                      ))}
+                    </select>
+                </div>
+            ) : (
+                <input
+                  type="text"
+                  value={formData.targetId}
+                  onChange={(e) =>
+                    setFormData({ ...formData, targetId: e.target.value })
+                  }
+                  className={`w-full rounded-lg border px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 dark:bg-zinc-800 dark:text-zinc-100 ${
+                    errors.targetId
+                      ? "border-red-300 focus:ring-red-500"
+                      : "border-zinc-200 focus:ring-zinc-500 dark:border-zinc-700"
+                  }`}
+                  placeholder="Ex: FOLDER-RH, TAG-CONTRATS"
+                />
+            )}
+            
             {errors.targetId && (
               <p className="mt-1 text-xs text-red-500">{errors.targetId}</p>
             )}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { sql } from "@/lib/db"
 import { getToken } from "next-auth/jwt"
+import { autoUpdateExpiredRules } from "@/lib/access-control"
 
 // GET - Liste des règles d'accès
 export async function GET(request: NextRequest) {
@@ -13,6 +14,9 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       )
     }
+
+    // Mettre à jour automatiquement les règles expirées
+    await autoUpdateExpiredRules()
 
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get("userId")

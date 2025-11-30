@@ -45,8 +45,9 @@ export default function DocumentDetailsPage() {
       }
 
       const data: DocumentDetailsResponse = await response.json()
+      console.log('FRONTEND DEBUG: Received data:', data)
       setDocumentData(data.document)
-      setVersions(data.versions)
+      setVersions(data.versions || []) // Ensure it's an array
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
@@ -58,7 +59,8 @@ export default function DocumentDetailsPage() {
     setDownloadingVersion(versionId)
     
     try {
-      const response = await fetch(`/api/documents/${documentId}/download/${versionId}`)
+      // Add ?download=true to force attachment disposition
+      const response = await fetch(`/api/documents/${documentId}/download/${versionId}?download=true`)
       
       if (!response.ok) {
         throw new Error('Failed to download document')
@@ -214,6 +216,21 @@ export default function DocumentDetailsPage() {
         </div>
       </div>
 
+      {/* Document Preview */}
+      <div className="mb-8 rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-medium text-zinc-900 dark:text-zinc-100">
+          <Eye className="h-5 w-5" />
+          Aperçu du document
+        </h2>
+        <div className="w-full min-h-[600px] bg-zinc-100 dark:bg-zinc-800 rounded-lg overflow-hidden">
+             <iframe
+                src={`/api/documents/${documentId}/download`}
+                className="w-full h-[700px] border-0"
+                title={`Aperçu de ${documentData.label}`}
+             />
+        </div>
+      </div>
+
       {/* Document Info */}
       <div className="mb-8 rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-medium text-zinc-900 dark:text-zinc-100">
@@ -293,7 +310,7 @@ export default function DocumentDetailsPage() {
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800">
                         <span className="text-sm">
-                          {getFileIcon(version.file_mimetype)}
+                          {getFileIcon(version.file_mimetype || 'application/pdf')}
                         </span>
                       </div>
                       <div>
@@ -301,7 +318,7 @@ export default function DocumentDetailsPage() {
                           Version {versions.length - index}
                         </h3>
                         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                          {version.file_filename}
+                          {version.file_filename || `Version ${version.id}`}
                         </p>
                       </div>
                     </div>
@@ -312,13 +329,14 @@ export default function DocumentDetailsPage() {
                         {formatDate(version.timestamp)}
                       </div>
                       <div>
-                        {formatFileSize(version.file_size)}
+                        {formatFileSize(version.file_size || 0)}
                       </div>
                       <div>
-                        {version.page_count} page{version.page_count !== 1 ? 's' : ''}
+                        {/* Page count logic handled by optional chaining in version object if needed */}
+                         {(version as any).pages_first?.page_number || 1} page(s)
                       </div>
                       <div>
-                        {version.file_mimetype}
+                        {version.file_mimetype || 'application/pdf'}
                       </div>
                       {version.active && (
                         <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-200">
@@ -335,10 +353,15 @@ export default function DocumentDetailsPage() {
                   </div>
                   
                   <div className="flex items-center gap-2 ml-4">
-                    <button className="flex items-center gap-1 rounded-lg border border-zinc-200 px-2 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800">
+                    <a 
+                      href={`/api/documents/${documentId}/download/${version.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 rounded-lg border border-zinc-200 px-2 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                    >
                       <Eye className="h-3 w-3" />
                       Voir
-                    </button>
+                    </a>
                     <button
                       onClick={() => downloadVersion(version.id)}
                       disabled={downloadingVersion === version.id}

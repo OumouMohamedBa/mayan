@@ -195,6 +195,10 @@ function DocumentDetailContent() {
 
   const { document, versions } = documentDetails
 
+  // Debug: Log the document structure
+  console.log('DEBUG: Admin page - document object:', JSON.stringify(document, null, 2))
+  console.log('DEBUG: Admin page - versions array:', versions)
+
   return (
     <div className="max-w-6xl mx-auto p-6">
       {/* Header */}
@@ -330,51 +334,14 @@ function DocumentDetailContent() {
             </div>
             
             <div className="p-4">
-              {document.latest_version ? (
-                <div className="w-full h-[800px] bg-gray-50 rounded-lg overflow-hidden">
-                  {document.latest_version.file_mimetype?.startsWith('image/') ? (
-                    // For images, use img tag
-                    <img
-                      src={`/api/documents/${document.id}/download`}
-                      alt={document.label}
-                      className="w-full h-full object-contain"
-                      loading="lazy"
-                    />
-                  ) : document.latest_version.file_mimetype === 'application/pdf' ? (
-                    // For PDFs, use iframe
-                    <iframe
-                      src={`/api/documents/${document.id}/download`}
-                      className="w-full h-full border-0"
-                      title={`Aperçu de ${document.label}`}
-                      loading="lazy"
-                    />
-                  ) : (
-                    // For other file types, show download prompt
-                    <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                      <File className="h-16 w-16 mb-4 text-gray-400" />
-                      <p className="text-lg font-medium mb-2">Aperçu non disponible</p>
-                      <p className="text-sm text-center mb-4">
-                        Type de fichier: {document.latest_version.file_mimetype || 'Inconnu'}
-                      </p>
-                      <button
-                        onClick={() => handleDownload()}
-                        disabled={downloading}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                      >
-                        {downloading ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Téléchargement...
-                          </>
-                        ) : (
-                          <>
-                            <Download className="h-4 w-4" />
-                            Télécharger pour voir
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
+              {versions.length > 0 ? (
+                <div className="w-full min-h-[600px] bg-gray-50 rounded-lg overflow-hidden">
+                  {/* Display PDF in iframe - works for most document types */}
+                  <iframe
+                    src={`/api/documents/${document.id}/download`}
+                    className="w-full h-[700px] border-0"
+                    title={`Aperçu de ${document.label}`}
+                  />
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-96 text-gray-500">

@@ -13,6 +13,58 @@ export interface AccessCheckResult {
 }
 
 /**
+ * Calcule le statut d'une règle d'accès basé sur les dates
+ */
+export function calculateAccessRuleStatus(startDate: Date, endDate: Date, isActive: boolean): "upcoming" | "active" | "expired" | "disabled" {
+  const now = new Date()
+  
+  // Si désactivé manuellement
+  if (!isActive) {
+    return "disabled"
+  }
+  
+  // Si la date de fin est passée
+  if (endDate < now) {
+    return "expired"
+  }
+  
+  // Si la date de début n'est pas encore arrivée
+  if (startDate > now) {
+    return "upcoming"
+  }
+  
+  // Sinon, c'est actif
+  return "active"
+}
+
+/**
+ * Met à jour automatiquement les règles expirées pour les désactiver
+ */
+export async function autoUpdateExpiredRules(): Promise<number> {
+  try {
+    const now = new Date()
+    
+    // Mettre à jour toutes les règles expirées qui sont encore actives
+    const result = await sql`
+      UPDATE access_rules
+      SET is_active = false, updated_at = ${now.toISOString()}
+      WHERE is_active = true
+        AND end_date < ${now.toISOString()}
+      RETURNING id
+    `
+    
+    if (result.length > 0) {
+      console.log(`Auto-désactivation de ${result.length} règle(s) expirée(s)`)
+    }
+    
+    return result.length
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour automatique des règles expirées:", error)
+    return 0
+  }
+}
+
+/**
  * Vérifie si un utilisateur a accès à une ressource selon les règles d'accès temporaires
  */
 export async function checkUserAccess(
@@ -126,9 +178,13 @@ export async function checkDocumentAccess(
 
 /**
  * Récupère toutes les règles d'accès actives pour un utilisateur
+ * Met automatiquement à jour les règles expirées avant de les récupérer
  */
 export async function getUserActiveAccessRules(userId: number) {
   try {
+    // D'abord, mettre à jour automatiquement les règles expirées
+    await autoUpdateExpiredRules()
+    
     const now = new Date()
 
     const rules = await sql`

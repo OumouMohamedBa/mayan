@@ -26,6 +26,8 @@ export async function GET(
       getMayanDocumentVersionsServer(documentId)
     ])
 
+    console.log('DEBUG: Document Versions Response:', JSON.stringify(versionsResponse, null, 2))
+
     // Return combined response
     return NextResponse.json({
       document,

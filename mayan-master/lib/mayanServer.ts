@@ -140,40 +140,49 @@ export async function deleteDocument(id: string | number): Promise<void> {
 // --- 4. TÉLÉCHARGER UN DOCUMENT ---
 export async function downloadMayanDocumentFile(id: string | number, versionId?: number): Promise<Blob> {
   let downloadUrl: string;
+  let res: Response | null = null;
   
   if (versionId) {
+     // If version is specified, try to find the file associated with it?
+     // Actually, Mayan 4.x structure separates versions and files.
+     // But let's keep the version logic if it works for some versions, or fallback to file logic.
      downloadUrl = `${BASE_URL}/api/v4/documents/${id}/versions/${versionId}/download/`;
+     // Not logging here to avoid noise, we'll log below
   } else {
-    // D'abord on récupère les infos pour avoir l'URL de la dernière version
-    const docRes = await fetch(`${BASE_URL}/api/v4/documents/${id}/`, {
+     // NEW STRATEGY: Fetch files list
+     console.log(`DEBUG: Fetching files list for doc ${id}`);
+     const filesRes = await fetch(`${BASE_URL}/api/v4/documents/${id}/files/`, {
         headers: getAuthHeaders(),
-    });
-
-    if (!docRes.ok) throw new Error("Document not found");
-    const doc = await docRes.json();
-
-    // Use download_url if available (user robust code), or construct it from version ID
-    downloadUrl = (doc.latest_version as any)?.download_url;
-    
-    if (!downloadUrl) {
-        if (doc.latest_version?.id) {
-            downloadUrl = `${BASE_URL}/api/v4/documents/${id}/versions/${doc.latest_version.id}/download/`;
+     });
+     
+     if (filesRes.ok) {
+        const filesData = await filesRes.json();
+        const latestFile = filesData.results?.[0]; // Usually the first one is the latest/primary
+        
+        if (latestFile) {
+            downloadUrl = `${BASE_URL}/api/v4/documents/${id}/files/${latestFile.id}/download/`;
+            console.log(`DEBUG: Found file ID ${latestFile.id}, using URL: ${downloadUrl}`);
         } else {
-            throw new Error("No latest version found (Empty document?)");
+            // Fallback to trying direct download if no files found (unlikely)
+            downloadUrl = `${BASE_URL}/api/v4/documents/${id}/download/`;
         }
-    }
+     } else {
+         console.error(`DEBUG: Failed to list files (${filesRes.status})`);
+         downloadUrl = `${BASE_URL}/api/v4/documents/${id}/download/`;
+     }
   }
-
-  // Ensuite on télécharge le flux
-  const fileRes = await fetch(downloadUrl, {
-    headers: {
-      'Authorization': `Token ${TOKEN}`,
-    },
+  
+  console.log(`DEBUG: Downloading from URL: ${downloadUrl}`);
+  res = await fetch(downloadUrl, {
+      headers: getAuthHeaders(),
   });
 
-  if (!fileRes.ok) throw new Error(`Failed to download file: ${fileRes.status}`);
-
-  return await fileRes.blob();
+  if (!res.ok) {
+    console.error(`DEBUG: Download failed with status: ${res.status}`);
+    throw new Error(`Failed to download document: ${res.status}`);
+  }
+  
+  return await res.blob();
 }
 
 // Alias for backward compatibility

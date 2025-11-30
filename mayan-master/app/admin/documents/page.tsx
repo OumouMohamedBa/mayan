@@ -257,10 +257,7 @@ export default function DocumentsPage() {
                     <Eye className="h-3 w-3" />
                     Voir
                   </Link>
-                  <button className="flex items-center gap-1 rounded-lg border border-zinc-200 px-2 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800">
-                    <Download className="h-3 w-3" />
-                    Télécharger
-                  </button>
+                 
                   <button 
                     onClick={() => handleDelete(doc.id, doc.label)}
                     className="flex items-center gap-1 rounded-lg border border-red-200 px-2 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/50"
