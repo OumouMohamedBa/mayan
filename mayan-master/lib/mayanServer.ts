@@ -83,6 +83,45 @@ export async function listMayanDocumentsServer(
   return mayanFetch<MayanPaginatedResponse<MayanDocument>>(endpoint);
 }
 
+export async function listDocumentTypes(): Promise<MayanPaginatedResponse<any>> {
+  return mayanFetch<MayanPaginatedResponse<any>>('/document_types/');
+}
+
+export async function createDocument(formData: FormData): Promise<MayanDocument> {
+  const baseUrl = process.env.MAYAN_BASE_URL || 'http://localhost:8000';
+  const apiToken = process.env.MAYAN_API_TOKEN;
+
+  if (!apiToken) {
+    throw new Error('MAYAN_API_TOKEN environment variable is not set');
+  }
+
+  const url = `${baseUrl}/api/v4/documents/`;
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${apiToken}`,
+        // Don't set Content-Type for FormData - let browser set it with boundary
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData: MayanError = await response.json().catch(() => ({}));
+      const errorMessage = errorData.detail || errorData.error || 'Unknown error';
+      throw new Error(`Mayan API error (${response.status}): ${errorMessage}`);
+    }
+
+    return await response.json() as MayanDocument;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to upload document to Mayan API');
+  }
+}
+
 export async function downloadMayanDocumentFileServer(
   documentId: number,
   versionId?: number
