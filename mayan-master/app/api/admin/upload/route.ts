@@ -37,22 +37,25 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Create new FormData for Mayan API
-    const mayanFormData = new FormData()
-    mayanFormData.append('file', file)
-    mayanFormData.append('document_type_id', documentTypeId)
+    // Validate document_type_id is a number
+    const documentTypeIdNum = parseInt(documentTypeId)
+    if (isNaN(documentTypeIdNum)) {
+      return NextResponse.json(
+        { error: 'Invalid document_type_id' },
+        { status: 400 }
+      )
+    }
+
+    // Update FormData with correct document_type_id as number
+    formData.set('document_type_id', documentTypeIdNum.toString())
     
-    // Optional: Add additional metadata if provided
-    const description = formData.get('description') as string
-    if (description) {
-      mayanFormData.append('description', description)
+    // Set label if not provided
+    if (!formData.get('label')) {
+      formData.set('label', file.name)
     }
     
-    const label = formData.get('label') as string || file.name
-    mayanFormData.append('label', label)
-    
     // Upload document to Mayan
-    const document = await createDocument(mayanFormData)
+    const document = await createDocument(formData)
     
     return NextResponse.json({
       success: true,

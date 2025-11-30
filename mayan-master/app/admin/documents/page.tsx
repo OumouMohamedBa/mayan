@@ -90,10 +90,13 @@ export default function DocumentsPage() {
             Gérez tous les documents du système ({totalCount} document{totalCount !== 1 ? 's' : ''})
           </p>
         </div>
-        <button className="flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">
+        <Link 
+          href="/admin/documents/new"
+          className="flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+        >
           <Plus className="h-4 w-4" />
           Ajouter un document
-        </button>
+        </Link>
       </div>
 
       {/* Search */}
@@ -157,10 +160,13 @@ export default function DocumentsPage() {
           <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
             {searchQuery ? 'Essayez une autre recherche' : 'Commencez par ajouter votre premier document'}
           </p>
-          <button className="flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">
+          <Link 
+            href="/admin/documents/new"
+            className="flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+          >
             <Plus className="h-4 w-4" />
             Ajouter un document
-          </button>
+          </Link>
         </div>
       ) : (
         /* Documents List */
@@ -178,7 +184,7 @@ export default function DocumentsPage() {
                     </div>
                     <div>
                       <Link 
-                        href={`/documents/${doc.id}`}
+                        href={`/admin/documents/${doc.id}`}
                         className="font-medium text-zinc-900 hover:text-zinc-700 dark:text-zinc-100 dark:hover:text-zinc-300 transition-colors"
                       >
                         {doc.label}
@@ -214,7 +220,7 @@ export default function DocumentsPage() {
                 
                 <div className="flex items-center gap-2 ml-4">
                   <Link 
-                    href={`/documents/${doc.id}`}
+                    href={`/admin/documents/${doc.id}`}
                     className="flex items-center gap-1 rounded-lg border border-zinc-200 px-2 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
                   >
                     <Eye className="h-3 w-3" />

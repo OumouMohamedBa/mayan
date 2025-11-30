@@ -3,14 +3,15 @@ import { getMayanDocumentServer, getMayanDocumentVersionsServer } from '@/lib/ma
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   // Debug environment variables
   console.log('MAYAN_BASE_URL:', process.env.MAYAN_BASE_URL)
   console.log('MAYAN_API_TOKEN:', process.env.MAYAN_API_TOKEN)
   
   try {
-    const documentId = parseInt(params.id)
+    const { id } = await params
+    const documentId = parseInt(id)
     
     if (isNaN(documentId)) {
       return NextResponse.json(

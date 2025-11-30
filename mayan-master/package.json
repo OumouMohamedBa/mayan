@@ -13,6 +13,7 @@
     "@next-auth/prisma-adapter": "^1.0.7",
     "@types/bcryptjs": "^2.4.6",
     "bcryptjs": "^3.0.3",
+    "form-data": "^4.0.5",
     "lucide-react": "^0.555.0",
     "next": "16.0.5",
     "next-auth": "^4.24.13",
@@ -21,6 +22,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/form-data": "^2.2.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

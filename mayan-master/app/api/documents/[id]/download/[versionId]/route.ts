@@ -3,13 +3,14 @@ import { downloadMayanDocumentFileServer, getMayanDocumentServer } from '@/lib/m
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string; versionId: string } }
+  { params }: { params: Promise<{ id: string; versionId: string }> }
 ) {
   try {
-    const documentId = parseInt(params.id)
-    const versionId = parseInt(params.versionId)
+    const { id, versionId } = await params
+    const documentId = parseInt(id)
+    const versionIdNum = parseInt(versionId)
     
-    if (isNaN(documentId) || isNaN(versionId)) {
+    if (isNaN(documentId) || isNaN(versionIdNum)) {
       return NextResponse.json(
         { error: 'Invalid document ID or version ID' },
         { status: 400 }
@@ -17,7 +18,7 @@ export async function GET(
     }
 
     // Download the specific document version
-    const blob = await downloadMayanDocumentFileServer(documentId, versionId)
+    const blob = await downloadMayanDocumentFileServer(documentId, versionIdNum)
     
     // Get the document to determine filename
     const document = await getMayanDocumentServer(documentId)
@@ -26,7 +27,7 @@ export async function GET(
     return new NextResponse(blob, {
       headers: {
         'Content-Type': 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${document.latest_version?.file_filename || `document-${documentId}-v${versionId}`}"`,
+        'Content-Disposition': `attachment; filename="${document.latest_version?.file_filename || `document-${documentId}-v${versionIdNum}`}"`,
       },
     })
   } catch (error) {
