@@ -2,7 +2,6 @@
 // This file is for server-side use only (API routes, server components)
 
 import { MayanDocument, MayanDocumentVersion, MayanPaginatedResponse, MayanError } from './mayanClient'
-import NodeFormData from 'form-data'
 
 const BASE_URL = process.env.MAYAN_BASE_URL || 'http://localhost:8000';
 const TOKEN = process.env.MAYAN_API_TOKEN;
@@ -73,29 +72,27 @@ export async function createDocument(formData: FormData): Promise<MayanDocument>
 
   const docData = await createRes.json();
   const docId = docData.id;
-  console.log(`✅ [Upload] Step 1 Success. ID: ${docId}`);
 
   // STEP 2: File Content
-  console.log(`🚀 [Upload] Step 2: Sending file content...`);
-
   try {
-    const form = new NodeFormData();
+    // 1. Convert to Blob (Native)
     const buffer = Buffer.from(await file.arrayBuffer());
+    const fileBlob = new Blob([buffer], { type: file.type || 'application/pdf' });
 
-    // CHAMPS CRITIQUES POUR MAYAN V4
+    // 2. Build Native FormData
+    const form = new FormData();
     form.append('action_name', 'replace');
-    form.append('file_new', buffer, {
-      filename: file.name,
-      contentType: file.type || 'application/pdf',
-    });
+    // 3rd arg is filename (Critical for Mayan)
+    form.append('file_new', fileBlob, file.name);
 
+    // 3. Send Request
     const uploadRes = await fetch(`${BASE_URL}/api/v4/documents/${docId}/files/`, {
       method: "POST",
       headers: {
-        'Authorization': `Token ${TOKEN}`,
-        ...form.getHeaders(),
+        Authorization: `Token ${TOKEN}`,
+        // NO Content-Type header here! Next.js handles the boundary automatically.
       },
-      body: form as any,
+      body: form,
     });
 
     if (!uploadRes.ok) {
