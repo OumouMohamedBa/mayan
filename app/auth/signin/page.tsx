@@ -29,11 +29,10 @@ export default function SignIn() {
       if (result?.error) {
         setError("Identifiants invalides")
       } else {
-        // Refresh to get updated session, then redirect based on role
+        // Redirect to dashboard - the dashboard will handle role-based routing
         router.refresh()
-        // Small delay to ensure session is updated
         setTimeout(() => {
-          window.location.href = "/admin"
+          window.location.href = "/dashboard"
         }, 100)
       }
     } catch (error) {

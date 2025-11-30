@@ -37,3 +37,6 @@ export function usePermissions() {
     role,
   }
 }
+
+// Re-export useAccessControl pour un accès facile
+export { useAccessControl } from "./useAccessControl"
