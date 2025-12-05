@@ -1,6 +1,6 @@
 "use client"
 
-import { FileText, Search, Plus, RefreshCw, Download, Eye, Calendar, File, Trash } from "lucide-react"
+import { FileText, Search, Plus, RefreshCw, Download, Eye, Calendar, File, Trash, Upload, FolderOpen, HardDrive } from "lucide-react"
 import { useState, useEffect } from "react"
 import { MayanDocument, MayanPaginatedResponse } from "@/lib/mayanClient"
 import Link from "next/link"
@@ -109,63 +109,69 @@ export default function DocumentsPage() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
+  // Calculate total size
+  const totalSize = documents.reduce((acc, doc) => acc + (doc.latest_version?.file_size || 0), 0)
+
   return (
-    <div>
+    <div className="space-y-6">
       {/* Header */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+          <h1 className="text-2xl font-bold text-stone-800">
             Gestion des Documents
           </h1>
-          <p className="text-zinc-600 dark:text-zinc-400">
-            Gérez tous les documents du système ({totalCount} document{totalCount !== 1 ? 's' : ''})
+          <p className="text-stone-500 mt-1">
+            Gérez tous les documents du système
           </p>
         </div>
         <Link 
           href="/admin/documents/new"
-          className="flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+          className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-amber-500/25 transition-all hover:shadow-xl hover:shadow-amber-500/30 hover:-translate-y-0.5"
         >
-          <Plus className="h-4 w-4" />
+          <Upload className="h-4 w-4" />
           Ajouter un document
         </Link>
       </div>
 
+
       {/* Search */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-          <input
-            type="text"
-            placeholder="Rechercher un document..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            className="w-full rounded-lg border border-zinc-200 bg-white py-2 pl-10 pr-4 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder-zinc-500"
-          />
-        </div>
-        <div className="flex gap-2">
-          <button 
-            onClick={handleSearch}
-            className="flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-          >
-            <Search className="h-4 w-4" />
-            Rechercher
-          </button>
-          <button 
-            onClick={handleRefresh}
-            disabled={loading}
-            className="flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800 disabled:opacity-50"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Actualiser
-          </button>
+      <div className="rounded-2xl bg-white border border-stone-200/60 p-4 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+            <input
+              type="text"
+              placeholder="Rechercher un document..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              className="w-full rounded-xl border border-stone-200 bg-stone-50/50 py-2.5 pl-10 pr-4 text-sm text-stone-800 placeholder-stone-400 focus:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all"
+            />
+          </div>
+          <div className="flex gap-2">
+            <button 
+              onClick={handleSearch}
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-sm font-medium text-white shadow-md transition-all hover:shadow-lg"
+            >
+              <Search className="h-4 w-4" />
+              Rechercher
+            </button>
+            <button 
+              onClick={handleRefresh}
+              disabled={loading}
+              className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-600 transition-all hover:bg-stone-50 disabled:opacity-50"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Actualiser
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Error State */}
       {error && (
-        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950">
-          <p className="text-sm text-red-800 dark:text-red-200">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
+          <p className="text-sm text-red-700 font-medium">
             Erreur: {error}
           </p>
         </div>
@@ -173,29 +179,27 @@ export default function DocumentsPage() {
 
       {/* Loading State */}
       {loading && documents.length === 0 ? (
-        <div className="flex items-center justify-center rounded-xl border border-zinc-200 bg-white py-16 dark:border-zinc-800 dark:bg-zinc-950">
-          <div className="flex items-center gap-3">
-            <RefreshCw className="h-6 w-6 animate-spin text-zinc-400" />
-            <p className="text-zinc-600 dark:text-zinc-400">Chargement des documents...</p>
-          </div>
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-stone-200/60 bg-white py-16 shadow-sm">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-200 border-t-amber-500 mb-4" />
+          <p className="text-stone-500 font-medium">Chargement des documents...</p>
         </div>
       ) : documents.length === 0 && !error ? (
         /* Empty State */
-        <div className="flex flex-col items-center justify-center rounded-xl border border-zinc-200 bg-white py-16 dark:border-zinc-800 dark:bg-zinc-950">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
-            <FileText className="h-8 w-8 text-zinc-400" />
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-stone-200/60 bg-white py-16 shadow-sm">
+          <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-stone-100">
+            <FileText className="h-10 w-10 text-stone-400" />
           </div>
-          <h3 className="mb-2 text-lg font-medium text-zinc-900 dark:text-zinc-100">
+          <h3 className="mb-2 text-lg font-semibold text-stone-800">
             {searchQuery ? 'Aucun résultat trouvé' : 'Aucun document'}
           </h3>
-          <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mb-6 text-sm text-stone-500">
             {searchQuery ? 'Essayez une autre recherche' : 'Commencez par ajouter votre premier document'}
           </p>
           <Link 
             href="/admin/documents/new"
-            className="flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-amber-500/25 transition-all hover:shadow-xl"
           >
-            <Plus className="h-4 w-4" />
+            <Upload className="h-4 w-4" />
             Ajouter un document
           </Link>
         </div>
@@ -205,44 +209,45 @@ export default function DocumentsPage() {
           {documents.map((doc) => (
             <div
               key={doc.id}
-              className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900"
+              className="group rounded-2xl border border-stone-200/60 bg-white p-5 shadow-sm transition-all hover:shadow-md hover:border-stone-300"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800">
-                      <File className="h-5 w-5 text-zinc-600 dark:text-zinc-400" />
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-md">
+                      <File className="h-6 w-6 text-white" />
                     </div>
                     <div>
                       <Link 
                         href={`/admin/documents/${doc.id}`}
-                        className="font-medium text-zinc-900 hover:text-zinc-700 dark:text-zinc-100 dark:hover:text-zinc-300 transition-colors"
+                        className="font-semibold text-stone-800 hover:text-amber-600 transition-colors"
                       >
                         {doc.label}
                       </Link>
-                      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                      <p className="text-sm text-stone-500">
                         {doc.document_type_label}
                       </p>
                     </div>
                   </div>
                   
                   {doc.description && (
-                    <p className="mb-2 text-sm text-zinc-600 dark:text-zinc-400 line-clamp-2">
+                    <p className="mb-3 text-sm text-stone-600 line-clamp-2">
                       {doc.description}
                     </p>
                   )}
                   
-                  <div className="flex items-center gap-4 text-xs text-zinc-500 dark:text-zinc-400">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
+                  <div className="flex items-center gap-4 text-xs text-stone-500">
+                    <div className="flex items-center gap-1.5 bg-stone-100 px-2.5 py-1 rounded-lg">
+                      <Calendar className="h-3.5 w-3.5" />
                       {formatDate(doc.datetime_created)}
                     </div>
-                    <div className="flex items-center gap-1">
-                      <FileText className="h-3 w-3" />
+                    <div className="flex items-center gap-1.5 bg-stone-100 px-2.5 py-1 rounded-lg">
+                      <FileText className="h-3.5 w-3.5" />
                       {doc.versions_count} version{doc.versions_count !== 1 ? 's' : ''}
                     </div>
                     {doc.latest_version && (
-                      <div>
+                      <div className="flex items-center gap-1.5 bg-stone-100 px-2.5 py-1 rounded-lg">
+                        <HardDrive className="h-3.5 w-3.5" />
                         {formatFileSize(doc.latest_version.file_size)}
                       </div>
                     )}
@@ -252,18 +257,18 @@ export default function DocumentsPage() {
                 <div className="flex items-center gap-2 ml-4">
                   <Link 
                     href={`/admin/documents/${doc.id}`}
-                    className="flex items-center gap-1 rounded-lg border border-zinc-200 px-2 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                    className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium text-stone-600 transition-all hover:bg-stone-50 hover:border-stone-300"
                   >
-                    <Eye className="h-3 w-3" />
+                    <Eye className="h-4 w-4" />
                     Voir
                   </Link>
                  
                   <button 
                     onClick={() => handleDelete(doc.id, doc.label)}
-                    className="flex items-center gap-1 rounded-lg border border-red-200 px-2 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/50"
+                    className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-600 transition-all hover:bg-red-100 hover:border-red-300"
                     title="Supprimer le document"
                   >
-                    <Trash className="h-3 w-3" />
+                    <Trash className="h-4 w-4" />
                     Supprimer
                   </button>
                 </div>
@@ -273,21 +278,33 @@ export default function DocumentsPage() {
           
           {/* Pagination */}
           {totalCount > pageSize && (
-            <div className="flex items-center justify-center gap-2 pt-4">
+            <div className="flex items-center justify-center gap-3 pt-4">
               <button
                 onClick={() => fetchDocuments(searchQuery, currentPage - 1)}
                 disabled={currentPage === 1}
-                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-600 transition-all hover:bg-stone-50 disabled:opacity-50"
               >
                 Précédent
               </button>
-              <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                Page {currentPage} sur {Math.ceil(totalCount / pageSize)}
-              </span>
+              <div className="flex items-center gap-2">
+                {Array.from({ length: Math.min(5, Math.ceil(totalCount / pageSize)) }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => fetchDocuments(searchQuery, page)}
+                    className={`h-10 w-10 rounded-xl text-sm font-medium transition-all ${
+                      currentPage === page
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md'
+                        : 'border border-stone-200 bg-white text-stone-600 hover:bg-stone-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
               <button
                 onClick={() => fetchDocuments(searchQuery, currentPage + 1)}
                 disabled={currentPage >= Math.ceil(totalCount / pageSize)}
-                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                className="rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm font-medium text-stone-600 transition-all hover:bg-stone-50 disabled:opacity-50"
               >
                 Suivant
               </button>

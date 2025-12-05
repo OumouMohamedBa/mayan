@@ -19,7 +19,10 @@ import {
   CheckCircle,
   User,
   X,
-  Maximize2
+  Maximize2,
+  FileTextIcon,
+  ExternalLink,
+  Loader2
 } from "lucide-react"
 import Link from "next/link"
 import { signOut } from "next-auth/react"
@@ -38,6 +41,10 @@ export default function DashboardPage() {
   
   // State for document preview modal
   const [viewingDocument, setViewingDocument] = useState<{id: string, name: string} | null>(null)
+  // State for document summary modal
+  const [summaryDocument, setSummaryDocument] = useState<{id: string, name: string} | null>(null)
+  // State for SSO loading
+  const [isSsoLoading, setIsSsoLoading] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -92,6 +99,41 @@ export default function DashboardPage() {
   const expiringSoon = activeRules.filter(r => getDaysRemaining(r.endDate) <= 7).length // Expire dans 7 jours ou moins
   const activeAccess = activeRules.length
 
+  // SSO function to access Mayan EDMS
+  const handleSsoLogin = async () => {
+    setIsSsoLoading(true)
+    try {
+      
+      
+      const clientId = 'mayan-edms'
+      const redirectUri = `${process.env.MAYAN_BASE_URL || 'http://localhost:8000'}/oidc/callback/`
+      const scope = 'openid profile email groups permissions'
+      const responseType = 'code'
+      const state = 'security_token_' + Math.random().toString(36).substring(7)
+      const nonce = 'nonce_' + Math.random().toString(36).substring(7)
+      
+      const authorizeUrl = `/api/oidc/authorize?` + 
+        `client_id=${encodeURIComponent(clientId)}&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+        `scope=${encodeURIComponent(scope)}&` +
+        `response_type=${encodeURIComponent(responseType)}&` +
+        `state=${encodeURIComponent(state)}&` +
+        `nonce=${encodeURIComponent(nonce)}`
+        
+      console.log('[SSO] Initiating OIDC flow via:', authorizeUrl)
+      
+      // Redirect to our Authorize endpoint
+      window.location.href = authorizeUrl
+      
+    } catch (error) {
+      console.error('SSO login failed:', error)
+      // Fallback
+      window.open(process.env.MAYAN_BASE_URL || 'http://localhost:8000', '_blank')
+    } finally {
+      // setIsSsoLoading(false) // Don't reset if redirecting
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 via-white to-zinc-100 dark:from-zinc-900 dark:via-zinc-950 dark:to-zinc-900">
       {/* Header */}
@@ -104,20 +146,34 @@ export default function DashboardPage() {
               </div>
               <div>
                 <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-                  Bonjour, {user?.name?.split(' ')[0]} 👋
+                  Bonjour, {user?.name?.split(' ')[0]} 
                 </h1>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">
                   {user?.email}
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => signOut({ callbackUrl: "/" })}
-              className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm transition-all hover:bg-zinc-50 hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-            >
-              <LogOut className="h-4 w-4" />
-              Déconnexion
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSsoLogin}
+                disabled={isSsoLoading}
+                className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSsoLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ExternalLink className="h-4 w-4" />
+                )}
+                {isSsoLoading ? 'Connexion...' : 'Mayan EDMS'}
+              </button>
+              <button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm transition-all hover:bg-zinc-50 hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+              >
+                <LogOut className="h-4 w-4" />
+                Déconnexion
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -271,6 +327,13 @@ export default function DashboardPage() {
                         <Eye className="h-4 w-4" />
                         Voir
                       </button>
+                      <button
+                        onClick={() => setSummaryDocument({ id: rule.targetId, name: rule.targetName })}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm font-medium text-zinc-700 transition-all hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                      >
+                        <FileTextIcon className="h-4 w-4" />
+                        Résumé
+                      </button>
                       <a
                         href={`/api/documents/${rule.targetId}/download?download=true`}
                         className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-medium text-white transition-all hover:bg-blue-700"
@@ -303,6 +366,98 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
+
+      {/* Document Summary Modal */}
+      {summaryDocument && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
+            onClick={() => setSummaryDocument(null)}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+                  <FileTextIcon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
+                    Résumé du document
+                  </h3>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    {summaryDocument.name}
+                  </p>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => setSummaryDocument(null)}
+                className="flex items-center justify-center h-10 w-10 rounded-lg text-zinc-500 transition-all hover:bg-zinc-200 dark:hover:bg-zinc-700 dark:text-zinc-400"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            {/* Summary Content */}
+            <div className="px-6 py-4">
+              <div className="space-y-4">
+                <div className="bg-zinc-50 dark:bg-zinc-800 rounded-lg p-4">
+                  <h4 className="font-medium text-zinc-900 dark:text-zinc-100 mb-2">Informations générales</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-zinc-500 dark:text-zinc-400">Nom du document:</span>
+                      <span className="text-zinc-900 dark:text-zinc-100">{summaryDocument.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-500 dark:text-zinc-400">ID:</span>
+                      <span className="text-zinc-900 dark:text-zinc-100">{summaryDocument.id}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-500 dark:text-zinc-400">Type:</span>
+                      <span className="text-zinc-900 dark:text-zinc-100">Document PDF</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-zinc-50 dark:bg-zinc-800 rounded-lg p-4">
+                  <h4 className="font-medium text-zinc-900 dark:text-zinc-100 mb-2">Actions disponibles</h4>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setViewingDocument({ id: summaryDocument.id, name: summaryDocument.name })
+                        setSummaryDocument(null)
+                      }}
+                      className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 transition-all hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                    >
+                      <Eye className="h-4 w-4" />
+                      Voir le document
+                    </button>
+                    <a
+                      href={`/api/documents/${summaryDocument.id}/download?download=true`}
+                      className="flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-all hover:bg-blue-700"
+                    >
+                      <Download className="h-4 w-4" />
+                      Télécharger
+                    </a>
+                  </div>
+                </div>
+                
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                  <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Note</h4>
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    Cette fenêtre de résumé vous donne un aperçu rapide des informations du document. 
+                    Pour voir le contenu complet, cliquez sur "Voir le document".
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Document Preview Modal */}
       {viewingDocument && (
